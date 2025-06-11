@@ -7,17 +7,13 @@
 
 
 ## Estrutura do Projeto:
-    ├── ``/
-    │   ├──
-    │   ├──
-    │   ├── 
-    ├── ``/
-    │   ├── ``/
-    │   │   └── 
-    │   ├── ``/
-    │   │   └── 
-    │   ├── ``/
-    │       └── 
+    ├── `rtl`/
+    │   ├── minha_fpu.sv
+    │
+    ├── `sim`/
+    │   ├── tb_minha_fpu.sv
+    │   ├── sim.do
+    │
     ├──
 
 ## Instruções de Execução:

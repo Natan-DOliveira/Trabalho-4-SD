@@ -20,8 +20,7 @@
 
 ### - Pelo Linux(Windows com MSYS2 MINGW64 deve funcionar igual):
     1. Entre na pasta `./sim/`
-    2. Escolha qual módulo quer testar e entre na pasta dele
-    3. Execute o comando `vsim -do sim.do`
+    2. Execute o comando `vsim -do sim.do`
 
 ### - Pelo Windows:
     1. Abra o Questa-Intel® FPGA Edition

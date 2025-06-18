@@ -14,7 +14,7 @@
     │   ├── tb_minha_fpu.sv
     │   ├── sim.do
     │
-    ├──
+    ├── README.md
 
 ## Instruções de Execução:
 

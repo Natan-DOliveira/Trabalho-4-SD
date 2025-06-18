@@ -2,7 +2,7 @@ if {[file isdirectory work]} {vdel -all -lib work}
 vlib work
 vmap work work
 
-vlog -work work ../../rtl/minha_fpu.sv
+vlog -work work ../rtl/minha_fpu.sv
 vlog -work work tb_minha_fpu.sv
 vsim -voptargs=+acc work.tb_minha_fpu
 

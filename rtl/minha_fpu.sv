@@ -16,7 +16,7 @@ module minha_fpu
     input logic [31:0] op_B_in,
     
     output logic [3:0] status_out,
-    output logic [31:0] data_out,
+    output logic [31:0] data_out
 );
 
     typedef enum logic [3:0]
@@ -29,7 +29,7 @@ module minha_fpu
     } state_status_out;
     
     	// FSM
-    typedef enum logic [3:0]
+    typedef enum logic [2:0]
     {
         EXTRAI    = 3'b000,                     // EXTRAI os valores e coloca nos operadores
         DIFERENCA = 3'b001,                     // calcula a DIFERENCA dos expoentes
@@ -44,6 +44,7 @@ module minha_fpu
         // Sinais Internos
     state_fsm state;
     state_status_out status;
+    logic reset_anterior;
     logic sinal_op_A;
     logic sinal_op_B;
     logic sinal_data_out;
@@ -55,13 +56,11 @@ module minha_fpu
     logic [21:0] mantissa_op_B;
     logic [22:0] mantissa_data_out;
     
-        // Atribuições
-    assign status_out = status;
-    
     always_ff @(posedge clock_100KHz or negedge reset) begin
         if (!reset) begin
             state             <= EXTRAI;
             status            <= ESPERA;
+            reset_anterior    <= reset;
             sinal_op_A        <= 1'b0;
             sinal_op_B        <= 1'b0;
             expoente_op_A     <= 10'b0;
@@ -73,17 +72,17 @@ module minha_fpu
             data_out          <= 32'b0;
         end
         else begin
+            reset_anterior <= reset;
             case (state)
-
                 EXTRAI: begin
-                    if (op_A_in != 32'b0 && op_B_in != 32'b0) begin
+                    if (reset_anterior == 0) begin
+                        state         <= DIFERENCA;
                         sinal_op_A    <= op_A_in[31];
                         expoente_op_A <= op_A_in[30:21];
                         mantissa_op_A <= {1'b1, op_A_in[20:0]};
                         sinal_op_B    <= op_B_in[31];
                         expoente_op_B <= op_B_in[30:21];
                         mantissa_op_B <= {1'b1, op_B_in[20:0]};
-                        state <= DIFERENCA;
                     end
                 end
 
@@ -109,7 +108,7 @@ module minha_fpu
                     if (diferenca_expoente > 22) begin
                         state             <= SAIDA;
                         status            <= UNDERFLOW;
-                        sinal_data_out    <= sinal_op_A
+                        sinal_data_out    <= sinal_op_A;
                         mantissa_data_out <= mantissa_op_A;
                     end
                     else begin
@@ -139,7 +138,19 @@ module minha_fpu
                 end
 
                 NORMALIZA: begin
-                    state <= ARREDONDA;
+                    if (mantissa_data_out[22] == 1'b1) begin
+                        mantissa_data_out <= mantissa_data_out >> 1;
+                        expoente_data_out <= expoente_data_out + 1;
+                        state <= ARREDONDA;
+                    end
+                    else if (mantissa_data_out[22] == 1'b0 && mantissa_data_out != 0) begin
+                        mantissa_data_out <= mantissa_data_out << 1;
+                        expoente_data_out <= expoente_data_out - 1;
+                        state <= ARREDONDA;
+                    end
+                    else begin
+                        state <= ARREDONDA;
+                    end
                 end
                 
                 ARREDONDA: begin
@@ -163,6 +174,7 @@ module minha_fpu
                     else if (status != INEXACT) begin
                         status   <= EXACT;
                     end
+                    state        <= SAIDA;
                 end
                 
                 SAIDA: begin

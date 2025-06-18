@@ -6,6 +6,7 @@ add wave -noupdate /tb_minha_fpu/op_A_in
 add wave -noupdate /tb_minha_fpu/op_B_in
 add wave -noupdate /tb_minha_fpu/status_out
 add wave -noupdate /tb_minha_fpu/data_out
+add wave -noupdate /tb_minha_fpu/DUT/status
 add wave -noupdate /tb_minha_fpu/DUT/state
 add wave -noupdate /tb_minha_fpu/DUT/sinal_op_A
 add wave -noupdate /tb_minha_fpu/DUT/sinal_op_B

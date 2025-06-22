@@ -11,14 +11,12 @@ module tb_minha_fpu;
 
     minha_fpu DUT (.*);
 
-    // Clock de 100 kHz (período = 10 us = 10000 ns)
     always #5 clock_100KHz = ~clock_100KHz;
 
     initial begin
-        $monitor("Tempo: %t | Estado: %s | op_A_in: %h | op_B_in: %h | data_out: %h | status_out: %b | status(interno): %s",
-                 $time, DUT.state.name, op_A_in, op_B_in, data_out, status_out, DUT.status.name);
+        $monitor("Tempo: %t | Estado: %s | op_A_in: %h | op_B_in: %h | data_out: %h | status_out: %b | status(interno): %s | Sinal data_out: %h | Expoente data_out: %h | Mantissa data_out: %h",
+                 $time, DUT.state.name, op_A_in, op_B_in, data_out, status_out, DUT.status.name, DUT.sinal_data_out, DUT.expoente_data_out, DUT.mantissa_data_out);
 
-        // Inicialização
         clock_100KHz = 0;
         reset        = 0;
         op_A_in      = 32'h00000000;
@@ -26,87 +24,84 @@ module tb_minha_fpu;
         #10; 
         reset = 1;
 
-        // Teste 1: Soma 1.5 + 1.5 = 3.0
+            // Teste 1: Soma 1.5 + 1.5 = 3.0
         reset = 0; #10;
         reset = 1;
         $display("\n--- Teste 1: Soma 1.5 + 1.5 = 3.0 ---");
-        op_A_in = {1'b0, 10'h100, 21'h400000}; // +2^0 * 1.5
-        op_B_in = {1'b0, 10'h100, 21'h400000}; // +2^0 * 1.5
-        #300;
+        op_A_in = 32'h20000000;                 // 1.5 (expoente 256)
+        op_B_in = 32'h20000000;                 // 1.5
+        #100;
 
-        // Teste 2: Soma 2.0 + 0.0 = 2.0
-        $display("\n--- Teste 2: Soma 2.0 + 0.0 = 2.0 ---");
+            // Teste 2: Soma 0.0 + 2.0 = 2.0
         reset = 0; #10;
         reset = 1;
-        op_A_in = {1'b0, 10'h100, 21'h800000}; // +2^0 * 2.0
-        op_B_in = {1'b0, 10'h000, 21'h000000}; // 0.0
-        #35;
+        $display("\n--- Teste 2: Soma 0.0 + 2.0 = 2.0 ---");
+        op_A_in = 32'h00000000;                 // 0.0
+        op_B_in = 32'h20200000;                 // 2.0 (expoente 257)
+        #40;
 
-        // Teste 3: Soma (~2^511*2) + (~2^511*2) = +Infinito
+            // Teste 3: Soma 4.0 + 1.5 = 5.5
         reset = 0; #10;
         reset = 1;
-        $display("\n--- Teste 3: Soma (~2^511*2) + (~2^511*2) = +Infinito ---");
-        op_A_in = {1'b0, 10'h3FE, 21'h7FFFFF}; // +2^511 * ~2.0
-        op_B_in = {1'b0, 10'h3FE, 21'h7FFFFF}; // +2^511 * ~2.0
-        #95;
+        $display("\n--- Teste 3: Soma 4.0 + 1.5 = 5.5 ---");
+        op_A_in = 32'h20400000;                 // 4.0 (expoente 258)
+        op_B_in = 32'h20000000;                 // 1.5 (expoente 256)
+        #100;
 
-        // Teste 4: Soma 2.0 + (-1.0) = 1.0
+            // Teste 4: Soma 2^512 + 2^512 = ∞ (overflow)
         reset = 0; #10;
         reset = 1;
-        $display("\n--- Teste 4: Soma 2.0 + (-1.0) = 1.0 ---");
-        op_A_in = {1'b0, 10'h100, 21'h800000}; // +2^0 * 2.0
-        op_B_in = {1'b1, 10'h100, 21'h000000}; // -2^0 * 1.0
-        #95;
+        $display("\n--- Teste 4: Soma 2^512 + 2^512 = ∞ ---");
+        op_A_in = 32'h7FE00000;                 // 2^512 (expoente 1023)
+        op_B_in = 32'h7FE00000;                 // 2^512
+        #30;
 
-        // Teste 5: Soma ~2.0 + ~1.0000005 = ~2.0 (INEXACT)
+            // Teste 5: Soma 2^-255 + 2^-255 = 2^-254
         reset = 0; #10;
         reset = 1;
-        $display("\n--- Teste 5: Soma ~2.0 + ~1.0000005 = ~2.0 ---");
-        op_A_in = {1'b0, 10'h100, 21'h7FFFFF}; // +2^0 * ~2.0
-        op_B_in = {1'b0, 10'h100, 21'h000001}; // +2^0 * ~1.0000005
-        #95;
+        $display("\n--- Teste 5: Soma 2^-255 + 2^-255 = 2^-254 ---");
+        op_A_in = 32'h1FE00000;                 // 2^-255 (expoente 256)
+        op_B_in = 32'h1FE00000;                 // 2^-255
+        #100;
 
-        // Teste 6: Subtração 1.5 - 1.5 = 0.0
+            // Teste 6: Subtração 2.0 - 2.0 = 0.0
         reset = 0; #10;
         reset = 1;
-        $display("\n--- Teste 6: Subtracao 1.5 - 1.5 = 0.0 ---");
-        op_A_in = {1'b0, 10'h100, 21'h400000}; // +2^0 * 1.5
-        op_B_in = {1'b1, 10'h100, 21'h400000}; // -2^0 * 1.5
-        #95;
+        $display("\n--- Teste 6: Subtração 2.0 - 2.0 = 0.0 ---");
+        op_A_in = 32'h20200000;                 // 2.0 (expoente 257)
+        op_B_in = 32'h20200000;                 // 2.0
+        #100;
 
-        // Teste 7: Subtração (~2^-511*1.0000005) - (~2^-511*1.0000005) = 0.0
+            // Teste 7: Subtração 4.0 - 1.5 = 2.5
         reset = 0; #10;
         reset = 1;
-        $display("\n--- Teste 7: Subtracao (~2^-511*1.0000005) - (~2^-511*1.0000005) = 0.0 ---");
-        op_A_in = {1'b0, 10'h001, 21'h000001}; // +2^-511 * ~1.0000005
-        op_B_in = {1'b1, 10'h001, 21'h000001}; // -2^-511 * ~1.0000005
-        #95;
+        $display("\n--- Teste 7: Subtração 4.0 - 1.5 = 2.5 ---");
+        op_A_in = 32'h20200000;                 // 4.0 (expoente 258)
+        op_B_in = 32'h20000000;                 // 1.5 (expoente 256)
+        #90;
 
-        // Teste 8: Subtração 2.0 - 0.5 = 1.5
+            // Teste 8: Subtração -2.0 - 2.0 = 0.0
         reset = 0; #10;
         reset = 1;
-        $display("\n--- Teste 8: Subtracao 2.0 - 0.5 = 1.5 ---");
-        op_A_in = {1'b0, 10'h100, 21'h800000}; // +2^0 * 2.0
-        op_B_in = {1'b1, 10'h0FF, 21'h800000}; // -2^-1 * 2.0 = -0.5
-        #95;
+        $display("\n--- Teste 8: Subtração -2.0 - 2.0 = 0.0 ---");
+        op_A_in = 32'hA0200000;                 // -2.0 (expoente 257)
+        op_B_in = 32'h20200000;                 // 2.0
+        #90;
 
-        // Teste 9: Subtração Infinito - 2.0 = Infinito
+            // Teste 9: Subtração 2^512 - 2.0 = 2^512
         reset = 0; #10;
         reset = 1;
-        $display("\n--- Teste 9: Subtracao Infinito - 2.0 = Infinito ---");
-        op_A_in = {1'b0, 10'h3FF, 21'h000000}; // +Infinito
-        op_B_in = {1'b1, 10'h100, 21'h800000}; // -2^0 * 2.0
-        #35;
+        $display("\n--- Teste 9: Subtração 2^512 - 2.0 = 2^512 ---");
+        op_A_in = 32'h7FE00000;                 // 2^512 (expoente 1023)
+        op_B_in = 32'h20200000;                 // 2.0 (expoente 257)
+        #30;
 
-        // Teste 10: Subtração Infinito - Infinito = NaN
+            // Teste 10: Subtração 2^-255 - 2^-256 = 2^-256
         reset = 0; #10;
         reset = 1;
-        $display("\n--- Teste 10: Subtracao Infinito - Infinito = NaN ---");
-        op_A_in = {1'b0, 10'h3FF, 21'h000000}; // +Infinito
-        op_B_in = {1'b1, 10'h3FF, 21'h000000}; // -Infinito
-        #35;
-
-        #10;
-        $finish;
+        $display("\n--- Teste 10: Subtração 2^-255 - 2^-256 = 2^-256 ---");
+        op_A_in = 32'h1FE00000;                 // 2^-255 (expoente 256)
+        op_B_in = 32'h1FC00000;                 // 2^-256 (expoente 255)
+        #90;
     end
 endmodule
